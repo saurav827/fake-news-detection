@@ -6,6 +6,12 @@ A Streamlit-based machine learning web app that analyzes English and Hindi news 
 
 This project is designed as an academic final-year demonstration. It helps users check whether a news statement is likely to be real or fake, while also showing confidence and probability details for better interpretation.
 
+## Live Demo
+
+The deployed Streamlit app is available here:
+
+https://fake-news-detection-xu5z482pv3s9pp78yxpbpc.streamlit.app
+
 ## Features
 
 - English and Hindi text support
