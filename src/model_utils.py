@@ -4,6 +4,7 @@ Model Utility Functions for Fake News Detection System
 This module provides utility functions for loading, saving, and managing models.
 """
 
+import json
 import os
 import joblib
 from pathlib import Path
@@ -113,6 +114,27 @@ def load_stats(language='english'):
     except Exception as e:
         print(f"Error loading stats: {e}")
         return {}
+
+
+def save_model_comparison_results(report, filename='model_comparison_results.json'):
+    """
+    Save academic model-comparison results without touching deployment artifacts.
+
+    Args:
+        report (dict): Serializable comparison report.
+        filename (str): Output filename inside the models directory.
+
+    Returns:
+        str: Path to the saved comparison report.
+    """
+    models_dir = get_models_directory()
+    os.makedirs(models_dir, exist_ok=True)
+
+    output_path = os.path.join(models_dir, filename)
+    with open(output_path, 'w', encoding='utf-8') as output_file:
+        json.dump(report, output_file, indent=2, ensure_ascii=False)
+
+    return output_path
 
 
 def print_model_info():

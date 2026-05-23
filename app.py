@@ -11,12 +11,17 @@ from backend.predictor import predict_fake_news
 from config import DEMO_WARNING, LANGUAGES, UI_CONFIG
 from frontend.styles import apply_premium_styles
 from frontend.ui import (
+    render_advanced_research_scope,
     render_disclaimer,
     render_detection_guide,
+    render_feature_cards,
     render_footer,
     render_header,
+    render_multimodal_prototype_scope,
+    render_project_workflow,
     render_results,
     render_sidebar,
+    render_url_article_analyzer,
 )
 
 
@@ -41,6 +46,8 @@ def main():
 
     render_header()
     render_disclaimer(DEMO_WARNING)
+    render_project_workflow()
+    render_feature_cards()
 
     confidence_threshold = render_sidebar()
 
@@ -48,11 +55,14 @@ def main():
 
     with col1:
         st.markdown(
+            "<div class='section-divider'></div>"
             "<div class='section-title'>News Input</div>"
             "<div class='info-box'>Paste a news headline, short claim, or article excerpt. "
             "Select the matching language so the correct saved model is used for analysis.</div>",
             unsafe_allow_html=True,
         )
+
+        render_url_article_analyzer(NEWS_TEXT_KEY)
 
         with st.form("prediction_form"):
             language = st.radio(
@@ -74,19 +84,21 @@ def main():
             with button_col1:
                 check_button = st.form_submit_button(
                     "Check News",
-                    use_container_width=True,
+                    width="stretch",
                     type="primary",
                 )
             with button_col2:
                 clear_button = st.form_submit_button(
                     "Clear Text",
-                    use_container_width=True,
+                    width="stretch",
                     type="secondary",
                     on_click=clear_news_text,
                 )
 
     with col2:
         render_detection_guide()
+
+    prediction_result = None
 
     if clear_button:
         st.info("Input cleared. Enter fresh text to run another screening.")
@@ -103,6 +115,7 @@ def main():
             result = predict_fake_news(news_text, language_code, models)
 
         if result:
+            prediction_result = result
             render_results(result, models, language_code, confidence_threshold, news_text)
         else:
             st.error("Error making prediction. Please try again.")
@@ -110,6 +123,8 @@ def main():
     elif check_button and not news_text.strip():
         st.warning("Please enter some news text before checking.")
 
+    render_advanced_research_scope()
+    render_multimodal_prototype_scope(news_text, prediction_result)
     render_footer()
 
 
