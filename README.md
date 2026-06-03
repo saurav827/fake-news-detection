@@ -2,7 +2,7 @@
 
 ## Short Overview
 
-A Streamlit-based machine learning web app that analyzes English and Hindi news text using preprocessing, TF-IDF features, and trained ML models.
+A FastAPI + Streamlit machine learning web app that analyzes English and Hindi news text using preprocessing, TF-IDF features, and saved ML models.
 
 This project is designed as an academic final-year demonstration. It helps users check whether a news statement is likely to be real or fake, while also showing confidence and probability details for better interpretation.
 
@@ -17,11 +17,12 @@ https://fake-news-detection-xu5z482pv3s9pp78yxpbpc.streamlit.app
 - English and Hindi text support
 - Fake/Real news prediction
 - Confidence score
-- Probability breakdown
-- Detection tips
+- Model selector with 21 trained model choices per language
+- FastAPI backend with prediction, history, stats, and model-list APIs
+- Streamlit frontend for simple project demonstration
+- SQLite prediction history
 - Academic demo disclaimer
-- Professional Streamlit UI
-- 10+ traditional ML model comparison for research
+- Traditional ML model comparison for research
 - URL article text extraction that feeds the existing text predictor
 - TF-IDF word importance view for explainability
 - Trust and heuristic indicators for reviewer awareness
@@ -31,12 +32,15 @@ https://fake-news-detection-xu5z482pv3s9pp78yxpbpc.streamlit.app
 ## Tech Stack
 
 - Python
+- FastAPI
 - Streamlit
 - scikit-learn
 - TF-IDF
-- Logistic Regression or trained ML classifier
-- joblib/numpy
-- HTML/CSS styling through Streamlit markdown
+- SQLite
+- pandas, numpy, joblib
+- requests and BeautifulSoup
+
+No external API key is required.
 
 ## Project Structure
 
@@ -53,6 +57,8 @@ fake-news-detection/
 |-- tests/
 |-- screenshots/
 |-- requirements.txt
+|-- Procfile
+|-- railway.json
 |-- runtime.txt
 |-- README.md
 ```
@@ -89,7 +95,7 @@ The deployed prediction path is preserved. New modules do not retrain models, do
 4. Review confidence, probability, suspicious words, XAI term importance, and heuristic trust indicators.
 5. Use the research dashboard to discuss dataset statistics and model comparison results during academic evaluation.
 
-## How to Run Locally
+## Setup and Local Run
 
 Create and activate a virtual environment:
 
@@ -104,16 +110,33 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Run the Streamlit app:
+Run the backend API:
 
 ```powershell
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+In a second terminal, run the frontend:
+
+```powershell
+$env:API_URL="http://127.0.0.1:8000"
 streamlit run app.py
 ```
 
-After the command starts successfully, open the local Streamlit URL shown in the terminal, usually:
+Open the local Streamlit URL shown in the terminal, usually:
 
 ```text
 http://localhost:8501
+```
+
+Useful API checks:
+
+```text
+GET  http://127.0.0.1:8000/
+GET  http://127.0.0.1:8000/models?language=english
+POST http://127.0.0.1:8000/predict
+GET  http://127.0.0.1:8000/history
+GET  http://127.0.0.1:8000/stats
 ```
 
 ## Screenshots
@@ -137,10 +160,7 @@ During import, labels are normalized to `fake` and `real`, empty or very short r
 - `data/english_news.csv`: maximum 5000 rows.
 - `data/hindi_news.csv`: maximum 3000 rows.
 
-The original downloaded zip files are kept under `data/external/`. Local backups of the previous project CSV files are saved as:
-
-- `data/english_news_backup.csv`
-- `data/hindi_news_backup.csv`
+The original downloaded zip files are kept under `data/external/` when available.
 
 These datasets are used for academic/demo work only. Dataset quality, size, and label reliability directly affect model performance, so no real-world 100% accuracy is claimed.
 
@@ -264,18 +284,31 @@ Real image/video fake news accuracy requires multimodal datasets and specialized
 - Add image/video verification only after collecting verified multimodal datasets and training real multimodal models.
 - Develop a browser extension or mobile app.
 
-## Deployment
+## Railway Deployment
 
-The project can be deployed on Streamlit Cloud.
+The backend is ready for Railway deployment.
 
-Recommended deployment settings:
+Railway files:
 
-- Main file path: `app.py`
-- Dependency file: `requirements.txt`
-- Python runtime file: `runtime.txt`
-- Runtime version: `python-3.11.9`
+- `Procfile`
+- `railway.json`
+- `requirements.txt`
 
-Keep the trained model files inside the `models/` folder during deployment so the app can load the saved artifacts without retraining.
+Start command:
+
+```text
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+```
+
+Deployment steps:
+
+1. Push the project to GitHub.
+2. Create a new Railway project from the GitHub repository.
+3. Keep the trained model files inside the `models/` folder.
+4. Railway installs packages using `requirements.txt`.
+5. Railway starts the backend using `$PORT` from `railway.json` or `Procfile`.
+
+For the Streamlit frontend, set `API_URL` to the deployed Railway backend URL when running or deploying the frontend.
 
 ## Academic Disclaimer
 
