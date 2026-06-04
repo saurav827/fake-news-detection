@@ -1,3 +1,6 @@
 """Run the Streamlit frontend with: streamlit run app.py."""
 
-from frontend.app import *  # noqa: F401,F403
+from frontend.app import main
+
+if __name__ == "__main__":
+    main()

@@ -40,3 +40,9 @@ logs/
 # Environment
 .env
 .env.*
+
+# Project Specific
+database/predictions.db
+data/external/*.zip
+*.db
+node_modules/

@@ -6,7 +6,7 @@ import sqlite3
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "data" / "predictions.db"
+DB_PATH = ROOT / "database" / "predictions.db"
 OLD_DB_PATH = ROOT / "predictions.db"
 
 

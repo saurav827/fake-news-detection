@@ -60,18 +60,18 @@ def get_model_options(language):
 
 
 def show_result(result):
-    """Display prediction in a clear result box."""
+    """Display prediction in a compact result box."""
     is_real = result["prediction"] == "Real"
     box_class = "result-real" if is_real else "result-fake"
-    label = "Real News" if is_real else "Fake News"
+    label = "✓ REAL NEWS" if is_real else "✗ FAKE NEWS"
     confidence = float(result["confidence"])
 
     st.markdown(
         f"""
         <div class="result-box {box_class}">
             <div class="result-title">{label}</div>
-            <div>Confidence: <b>{confidence:.2f}%</b></div>
-            <div>Model: <b>{result.get("model", "Current Saved Model")}</b></div>
+            <div><b>Confidence:</b> {confidence:.1f}%</div>
+            <div><b>Model:</b> {result.get("model", "Saved Model")}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -80,14 +80,36 @@ def show_result(result):
 
     keywords = result.get("keywords", [])
     if keywords:
-        st.info("Keywords: " + ", ".join(keywords))
+        st.caption("📌 Keywords: " + ", ".join(keywords[:5]))
     else:
-        st.info("No strong keywords found.")
+        st.caption("No strong keywords detected.")
+
+
+def show_ai_explanation(text, result):
+    """Show AI explanation button for prediction."""
+    if st.button("📝 AI Explanation", use_container_width=True):
+        with st.spinner("Generating..."):
+            try:
+                explanation = api_post(
+                    "/explain",
+                    {
+                        "text": text,
+                        "prediction": result["prediction"],
+                        "confidence": result["confidence"],
+                        "keywords": result.get("keywords", []),
+                    },
+                )
+                if explanation.get("ok"):
+                    st.info(explanation["explanation"])
+                else:
+                    st.warning("Explanation unavailable.")
+            except Exception:
+                st.warning("Could not generate explanation.")
 
 
 def show_history():
-    """Show recent prediction history."""
-    st.subheader("Prediction History")
+    """Show recent prediction history - compact."""
+    st.subheader("History", divider="gray")
     try:
         rows = api_get("/history")
         if not rows:
@@ -95,46 +117,48 @@ def show_history():
             return
 
         data = pd.DataFrame(rows)
-        data["text"] = data["text"].str.slice(0, 120)
+        data["text"] = data["text"].str.slice(0, 100)
         data = data.rename(
             columns={
-                "text": "News Text",
+                "text": "Text",
                 "result": "Result",
                 "confidence": "Confidence",
                 "timestamp": "Time",
             }
         )
-        st.dataframe(data, use_container_width=True)
+        st.dataframe(data, use_container_width=True, height=300)
     except Exception as exc:
-        st.warning(f"Could not load history: {exc}")
+        st.warning(f"History unavailable: {exc}")
 
 
 def show_stats():
-    """Show simple project statistics."""
-    st.subheader("Project Stats")
+    """Show simple project statistics - compact and clean."""
+    st.subheader("Stats", divider="gray")
     try:
         stats = api_get("/stats")
-        col1, col2, col3 = st.columns(3)
+        
+        # Compact metrics row
+        col1, col2, col3 = st.columns(3, gap="small")
         col1.metric("Total", stats["total"])
         col2.metric("Fake", stats["fake"])
         col3.metric("Real", stats["real"])
 
-        chart = pd.DataFrame(
-            {"Count": [stats["fake"], stats["real"]]},
-            index=["Fake", "Real"],
-        )
+        # Compact chart
         if stats["total"] > 0:
-            st.markdown("<div class='chart-title'>Result Chart</div>", unsafe_allow_html=True)
-            st.bar_chart(chart)
+            chart_data = pd.DataFrame(
+                {"Count": [stats["fake"], stats["real"]]},
+                index=["Fake", "Real"],
+            )
+            st.bar_chart(chart_data, height=160)
         else:
-            st.info("No chart data yet. Run a prediction first.")
+            st.caption("No predictions yet.")
     except Exception as exc:
-        st.warning(f"Could not load stats: {exc}")
+        st.warning(f"Stats unavailable: {exc}")
 
 
 def footer():
     st.markdown(
-        "<div class='footer'>Final year project demo | FastAPI + Streamlit + SQLite + TF-IDF model</div>",
+        "<div class='footer'>B.Tech Final Year Project | ML + Streamlit | TF-IDF + Logistic Regression</div>",
         unsafe_allow_html=True,
     )
 
@@ -143,6 +167,8 @@ def clear_inputs():
     """Clear input fields."""
     st.session_state["news_text"] = ""
     st.session_state["news_url"] = ""
+    st.session_state.pop("last_prediction", None)
+    st.session_state.pop("last_text", None)
 
 
 def main():
@@ -150,46 +176,37 @@ def main():
     apply_styles()
 
     with st.sidebar:
-        st.title("Menu")
-        page = st.radio("Go to", ["Predict", "History", "Stats"], label_visibility="collapsed")
+        st.markdown("### Menu")
+        page = st.radio("", ["Predict", "History", "Stats"], label_visibility="collapsed")
         st.divider()
-        st.caption("Backend API")
-        st.code(API_URL)
+        st.markdown("**API Status**", help="Backend connection check")
         if api_is_running():
-            st.markdown("<span class='status-ok'>Backend connected</span>", unsafe_allow_html=True)
+            st.markdown(":green[✓ Connected]")
         else:
-            st.markdown("<span class='status-bad'>Backend not connected</span>", unsafe_allow_html=True)
-        st.caption("This app is for educational use. Always verify important news.")
+            st.markdown(":red[✗ Not connected]")
+        st.caption("Educational use only. Always verify with trusted sources.")
 
-    st.title("Fake News Detection")
-    st.markdown(
-        "<p class='small-note'>Paste news text or an article URL and check it using the saved ML model.</p>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("## Fake News Detection")
+    st.markdown("Paste news text and check it using the saved ML model.", help="Simple academic detector")
 
     if page == "Predict":
-        lang_col, model_col = st.columns([1, 2])
-        language = lang_col.selectbox("Language", ["english", "hindi"])
-        model_options = get_model_options(language)
-        selected_model = model_col.selectbox("ML Model", list(model_options.keys()))
-        model_col.caption(f"Available models: {len(model_options)}")
+        language = st.selectbox("Language", ["english", "hindi"])
+
         text = st.text_area(
             "News Text",
-            height=180,
-            placeholder="Paste headline or article text here",
+            height=150,
+            placeholder="Paste headline or article text",
             key="news_text",
         )
-        url = st.text_input("Article URL", placeholder="https://example.com/news", key="news_url")
+        url = st.text_input("Article URL", placeholder="https://example.com", key="news_url")
 
-        col1, col2 = st.columns([1, 1])
-        predict_clicked = col1.button("Check News", type="primary", use_container_width=True)
-        col2.button("Clear", use_container_width=True, on_click=clear_inputs)
+        predict_clicked = st.button("Check News", type="primary", use_container_width=True)
 
         if predict_clicked:
             if not text.strip() and not url.strip():
-                st.warning("Please enter news text or a URL.")
+                st.warning("Enter news text or URL.")
             else:
-                with st.spinner("Checking news..."):
+                with st.spinner("Analyzing..."):
                     try:
                         result = api_post(
                             "/predict",
@@ -197,12 +214,16 @@ def main():
                                 "text": text,
                                 "url": url,
                                 "language": language,
-                                "model": model_options[selected_model],
                             },
                         )
                         show_result(result)
+                        st.session_state["last_prediction"] = result
+                        st.session_state["last_text"] = text or url
                     except Exception as exc:
-                        st.error(f"Prediction failed: {exc}")
+                        st.error(f"Error: {exc}")
+
+        if st.session_state.get("last_prediction") and not predict_clicked:
+            show_result(st.session_state["last_prediction"])
 
         st.divider()
         show_stats()
@@ -214,6 +235,7 @@ def main():
         show_stats()
 
     footer()
+
 
 
 if __name__ == "__main__":

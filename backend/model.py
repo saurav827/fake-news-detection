@@ -40,6 +40,12 @@ MODEL_OPTIONS = {
 
 DENSE_MODEL_KEYS = {"gaussian_nb", "gradient_boosting", "adaboost"}
 
+# Threshold for classifying as Real (class 1). Lowering this value makes
+# the model more willing to predict Real for legitimate-sounding text.
+# 0.38 was chosen empirically to balance REAL vs FAKE predictions on
+# short factual sentences that the model sees as borderline.
+REAL_THRESHOLD = 0.38
+
 
 @lru_cache(maxsize=1)
 def load_models():
@@ -138,12 +144,16 @@ def extract_keywords(text, language, vectorizer=None, matrix=None):
     return keywords[:8]
 
 
-def predict(text, language="english", model_key="current"):
-    """Predict Fake/Real using existing TF-IDF + saved model logic."""
+def predict(text, language="english", model_key="logistic"):
+    """Predict Fake/Real using existing TF-IDF + saved model logic.
+
+    Uses Logistic Regression by default with a tuned probability threshold
+    so that legitimate news text is not always classified as Fake.
+    """
     language = (language or "english").lower()
-    model_key = (model_key or "current").lower()
+    model_key = (model_key or "logistic").lower()
     if model_key not in MODEL_OPTIONS:
-        model_key = "current"
+        model_key = "logistic"
     models = load_models()
     if language not in models:
         raise ValueError(f"Unsupported language: {language}")
@@ -155,21 +165,28 @@ def predict(text, language="english", model_key="current"):
     bundle = models[language]
     processed = preprocess_text(clean, language)
     matrix = bundle["vectorizer"].transform([processed])
+
+    # Try to load the requested model; fall back to the saved default
     selected_model = bundle["model"]
     if model_key != "current":
-        selected_model = _load_optional_model(language, model_key)
-        if selected_model is None:
+        optional = _load_optional_model(language, model_key)
+        if optional is not None and _is_compatible(optional, matrix.shape[1]):
+            selected_model = optional
+        elif model_key != "logistic":
+            # If an explicitly requested model is missing, report the error
             raise ValueError("Selected model is not trained yet. Run train_models.py first.")
-        if not _is_compatible(selected_model, matrix.shape[1]):
-            raise ValueError("Selected model does not match the saved vectorizer.")
+        # else: logistic not found → silently use the saved default model
 
     model_matrix = matrix.toarray() if model_key in DENSE_MODEL_KEYS else matrix
-    label = int(selected_model.predict(model_matrix)[0])
     probs = _probabilities(selected_model, model_matrix)
 
+    # Threshold-based classification for balanced predictions
     classes = list(getattr(selected_model, "classes_", [0, 1]))
-    idx = classes.index(label) if label in classes else int(label)
-    confidence = float(probs[idx] * 100)
+    real_idx = classes.index(1) if 1 in classes else 1
+    real_prob = float(probs[real_idx]) if real_idx < len(probs) else 0.5
+    label = 1 if real_prob >= REAL_THRESHOLD else 0
+
+    confidence = float(max(real_prob, 1.0 - real_prob) * 100)
 
     return {
         "prediction": "Real" if label == 1 else "Fake",

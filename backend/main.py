@@ -5,10 +5,11 @@ from typing import Optional
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.db import get_history, get_stats, init_db, save_prediction
 from backend.model import get_available_models, predict
+from helpers.ai_explainer import generate_ai_explanation, is_ai_explainer_enabled
 from helpers.url_analyzer import extract_article_text
 
 
@@ -16,8 +17,15 @@ class PredictRequest(BaseModel):
     text: Optional[str] = None
     url: Optional[str] = None
     language: str = "english"
-    model: str = "current"
+    model: str = "logistic"
     selected_model: Optional[str] = None
+
+
+class ExplainRequest(BaseModel):
+    text: str = ""
+    prediction: str
+    confidence: float
+    keywords: list[str] = Field(default_factory=list)
 
 
 @asynccontextmanager
@@ -77,3 +85,18 @@ def models(language: str = "english"):
 @app.get("/stats")
 def stats():
     return get_stats()
+
+
+@app.get("/ai-status")
+def ai_status():
+    return {"enabled": is_ai_explainer_enabled(), "provider": "OpenRouter", "model": "openrouter/free"}
+
+
+@app.post("/explain")
+def explain_prediction(payload: ExplainRequest):
+    return generate_ai_explanation(
+        payload.text,
+        payload.prediction,
+        payload.confidence,
+        payload.keywords,
+    )

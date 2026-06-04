@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-21T08:51:49Z",
+  "generated_at_utc": "2026-06-03T19:12:25Z",
   "purpose": "Academic comparison of 10+ sklearn text models using existing CSV datasets and TF-IDF features.",
   "safety_note": "This report is separate from deployed prediction artifacts. Existing english_model.pkl, hindi_model.pkl, english_vectorizer.pkl, and hindi_vectorizer.pkl are not replaced.",
   "future_multimodal_prototype_plan": [
