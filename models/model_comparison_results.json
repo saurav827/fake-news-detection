@@ -1,138 +1,140 @@
 {
-  "generated_at_utc": "2026-06-03T19:12:25Z",
-  "purpose": "Academic comparison of 10+ sklearn text models using existing CSV datasets and TF-IDF features.",
-  "safety_note": "This report is separate from deployed prediction artifacts. Existing english_model.pkl, hindi_model.pkl, english_vectorizer.pkl, and hindi_vectorizer.pkl are not replaced.",
-  "future_multimodal_prototype_plan": [
-    "Image upload prototype for png, jpg, and jpeg files",
-    "Video upload prototype for mp4 files",
-    "OCR-based text extraction from news screenshots",
-    "Image manipulation detection",
-    "Reverse image verification",
-    "Video/deepfake detection",
-    "Multimodal detection using text + image + video"
-  ],
   "languages": {
     "english": {
       "language": "english",
       "dataset": {
-        "total_samples": 5000,
-        "train_samples": 4000,
-        "test_samples": 1000,
-        "test_size": 0.2,
-        "random_state": 42,
-        "stratified_split": true,
+        "total_samples": 15472,
+        "train_samples": 12377,
+        "test_samples": 3095,
         "class_distribution": {
-          "fake": 2500,
-          "real": 2500
-        },
-        "small_dataset_warning": ""
+          "fake": 7736,
+          "real": 7736
+        }
       },
       "tfidf": {
-        "max_features": 5000,
-        "min_df": 2,
-        "max_df": 0.8,
+        "max_features": 8000,
         "ngram_range": [
           1,
           2
-        ],
-        "fitted_features": 5000
+        ]
       },
-      "metric_average": "weighted",
       "models": {
         "Logistic Regression": {
           "status": "Success",
-          "accuracy": 0.897,
-          "precision": 0.8970397039703971,
-          "recall": 0.897,
-          "f1_score": 0.8969974249356234
+          "accuracy": 0.6943457189014539,
+          "precision": 0.6954748071444764,
+          "recall": 0.6943457189014539,
+          "f1_score": 0.6938969935024117,
+          "inference_speed_seconds": 0.0013995170593261719,
+          "average_confidence": 0.768326580901022,
+          "confusion_matrix": [
+            [
+              1134,
+              414
+            ],
+            [
+              532,
+              1015
+            ]
+          ]
         },
-        "Multinomial NB": {
+        "Passive Aggressive": {
           "status": "Success",
-          "accuracy": 0.849,
-          "precision": 0.8496167239009612,
-          "recall": 0.849,
-          "f1_score": 0.8489333796204126
-        },
-        "Complement NB": {
-          "status": "Success",
-          "accuracy": 0.849,
-          "precision": 0.8496167239009612,
-          "recall": 0.849,
-          "f1_score": 0.8489333796204126
-        },
-        "Bernoulli NB": {
-          "status": "Success",
-          "accuracy": 0.819,
-          "precision": 0.8232003112449393,
-          "recall": 0.819,
-          "f1_score": 0.8184100141359276
+          "accuracy": 0.6630048465266559,
+          "precision": 0.6649137927680329,
+          "recall": 0.6630048465266559,
+          "f1_score": 0.6620149048426183,
+          "inference_speed_seconds": 0.040865182876586914,
+          "average_confidence": 0.6288985728565564,
+          "confusion_matrix": [
+            [
+              1110,
+              438
+            ],
+            [
+              605,
+              942
+            ]
+          ]
         },
         "Linear SVM": {
           "status": "Success",
-          "accuracy": 0.913,
-          "precision": 0.9130016520066081,
-          "recall": 0.913,
-          "f1_score": 0.912999912999913
+          "accuracy": 0.6943457189014539,
+          "precision": 0.6965428163347914,
+          "recall": 0.6943457189014539,
+          "f1_score": 0.6934798083038151,
+          "inference_speed_seconds": 0.011873245239257812,
+          "average_confidence": 0.6763539218329514,
+          "confusion_matrix": [
+            [
+              1157,
+              391
+            ],
+            [
+              555,
+              992
+            ]
+          ]
         },
-        "SGD": {
+        "SGD Classifier": {
           "status": "Success",
-          "accuracy": 0.908,
-          "precision": 0.908026113671275,
-          "recall": 0.908,
-          "f1_score": 0.9079985279764475
+          "accuracy": 0.711470113085622,
+          "precision": 0.713716853411905,
+          "recall": 0.711470113085622,
+          "f1_score": 0.7107017812755014,
+          "inference_speed_seconds": 0.011426687240600586,
+          "average_confidence": 0.6928608291421804,
+          "confusion_matrix": [
+            [
+              1181,
+              367
+            ],
+            [
+              526,
+              1021
+            ]
+          ]
         },
-        "Passive Aggressive Classifier": {
+        "Multinomial NB": {
           "status": "Success",
-          "accuracy": 0.897,
-          "precision": 0.8973576218596737,
-          "recall": 0.897,
-          "f1_score": 0.8969768197844515
+          "accuracy": 0.6988691437802907,
+          "precision": 0.6989420251286257,
+          "recall": 0.6988691437802907,
+          "f1_score": 0.6988399049177937,
+          "inference_speed_seconds": 0.0039446353912353516,
+          "average_confidence": 0.7067722216853353,
+          "confusion_matrix": [
+            [
+              1097,
+              451
+            ],
+            [
+              481,
+              1066
+            ]
+          ]
         },
         "Random Forest": {
           "status": "Success",
-          "accuracy": 0.915,
-          "precision": 0.9150149405378594,
-          "recall": 0.915,
-          "f1_score": 0.9149992349931149
-        },
-        "Extra Trees": {
-          "status": "Success",
-          "accuracy": 0.909,
-          "precision": 0.9091980518570988,
-          "recall": 0.909,
-          "f1_score": 0.9089889876675078
-        },
-        "Decision Tree": {
-          "status": "Success",
-          "accuracy": 0.889,
-          "precision": 0.8891883671697101,
-          "recall": 0.889,
-          "f1_score": 0.8889865673746523
-        },
-        "KNN": {
-          "status": "Success",
-          "accuracy": 0.559,
-          "precision": 0.6748645540657491,
-          "recall": 0.559,
-          "f1_score": 0.47144547079106996
-        },
-        "AdaBoost": {
-          "status": "Success",
-          "accuracy": 0.912,
-          "precision": 0.912,
-          "recall": 0.912,
-          "f1_score": 0.912
-        },
-        "Gradient Boosting": {
-          "status": "Success",
-          "accuracy": 0.939,
-          "precision": 0.9393954559103193,
-          "recall": 0.939,
-          "f1_score": 0.93898627191118
+          "accuracy": 0.705654281098546,
+          "precision": 0.7284389508250027,
+          "recall": 0.705654281098546,
+          "f1_score": 0.6981022151267156,
+          "inference_speed_seconds": 0.16078615188598633,
+          "average_confidence": 0.7171936698209287,
+          "confusion_matrix": [
+            [
+              1337,
+              211
+            ],
+            [
+              700,
+              847
+            ]
+          ]
         }
       },
-      "best_model_by_f1_score": "Gradient Boosting",
-      "academic_note": "No 100% accuracy is guaranteed. The best model depends on dataset quality, dataset size, preprocessing, and evaluation split."
+      "best_model_by_f1_score": "SGD Classifier"
     },
     "hindi": {
       "language": "hindi",
@@ -140,121 +142,135 @@
         "total_samples": 3000,
         "train_samples": 2400,
         "test_samples": 600,
-        "test_size": 0.2,
-        "random_state": 42,
-        "stratified_split": true,
         "class_distribution": {
           "fake": 1500,
           "real": 1500
-        },
-        "small_dataset_warning": ""
+        }
       },
       "tfidf": {
         "max_features": 5000,
-        "min_df": 2,
-        "max_df": 0.8,
         "ngram_range": [
           1,
           2
-        ],
-        "fitted_features": 5000
+        ]
       },
-      "metric_average": "weighted",
       "models": {
         "Logistic Regression": {
           "status": "Success",
-          "accuracy": 0.9416666666666667,
-          "precision": 0.9458327258044618,
-          "recall": 0.9416666666666667,
-          "f1_score": 0.9415300744238624
-        },
-        "Multinomial NB": {
-          "status": "Success",
-          "accuracy": 0.9483333333333334,
-          "precision": 0.9485775588931752,
-          "recall": 0.9483333333333334,
-          "f1_score": 0.9483262999686068
-        },
-        "Complement NB": {
-          "status": "Success",
-          "accuracy": 0.9483333333333334,
-          "precision": 0.9485775588931752,
-          "recall": 0.9483333333333334,
-          "f1_score": 0.9483262999686068
-        },
-        "Bernoulli NB": {
-          "status": "Success",
           "accuracy": 0.9316666666666666,
-          "precision": 0.9383342171474991,
+          "precision": 0.9327485380116959,
           "recall": 0.9316666666666666,
-          "f1_score": 0.931405818236572
+          "f1_score": 0.9316239316239316,
+          "inference_speed_seconds": 0.00026488304138183594,
+          "average_confidence": 0.886160934902689,
+          "confusion_matrix": [
+            [
+              272,
+              28
+            ],
+            [
+              13,
+              287
+            ]
+          ]
+        },
+        "Passive Aggressive": {
+          "status": "Success",
+          "accuracy": 0.9383333333333334,
+          "precision": 0.938728188703166,
+          "recall": 0.9383333333333334,
+          "f1_score": 0.9383194552107557,
+          "inference_speed_seconds": 0.005228996276855469,
+          "average_confidence": 0.9275257696625958,
+          "confusion_matrix": [
+            [
+              277,
+              23
+            ],
+            [
+              14,
+              286
+            ]
+          ]
         },
         "Linear SVM": {
           "status": "Success",
-          "accuracy": 0.9466666666666667,
-          "precision": 0.949081728406095,
-          "recall": 0.9466666666666667,
-          "f1_score": 0.9465948664315357
-        },
-        "SGD": {
-          "status": "Success",
-          "accuracy": 0.935,
-          "precision": 0.9360902255639099,
-          "recall": 0.935,
-          "f1_score": 0.934959349593496
-        },
-        "Passive Aggressive Classifier": {
-          "status": "Success",
           "accuracy": 0.9383333333333334,
-          "precision": 0.9400986177891321,
+          "precision": 0.9385721114829185,
           "recall": 0.9383333333333334,
-          "f1_score": 0.9382714332983907
+          "f1_score": 0.9383249386722082,
+          "inference_speed_seconds": 0.002917766571044922,
+          "average_confidence": 0.9319975754803996,
+          "confusion_matrix": [
+            [
+              278,
+              22
+            ],
+            [
+              15,
+              285
+            ]
+          ]
+        },
+        "SGD Classifier": {
+          "status": "Success",
+          "accuracy": 0.9366666666666666,
+          "precision": 0.9369774061554885,
+          "recall": 0.9366666666666666,
+          "f1_score": 0.9366554054054056,
+          "inference_speed_seconds": 0.0036416053771972656,
+          "average_confidence": 0.9216414720326092,
+          "confusion_matrix": [
+            [
+              277,
+              23
+            ],
+            [
+              15,
+              285
+            ]
+          ]
+        },
+        "Multinomial NB": {
+          "status": "Success",
+          "accuracy": 0.9183333333333333,
+          "precision": 0.9191203482094155,
+          "recall": 0.9183333333333333,
+          "f1_score": 0.9182949773643739,
+          "inference_speed_seconds": 0.0003218650817871094,
+          "average_confidence": 0.924496065312502,
+          "confusion_matrix": [
+            [
+              282,
+              18
+            ],
+            [
+              31,
+              269
+            ]
+          ]
         },
         "Random Forest": {
           "status": "Success",
-          "accuracy": 0.9333333333333333,
-          "precision": 0.9389716806987529,
-          "recall": 0.9333333333333333,
-          "f1_score": 0.9331185696291425
-        },
-        "Extra Trees": {
-          "status": "Success",
-          "accuracy": 0.935,
-          "precision": 0.9391031752262813,
-          "recall": 0.935,
-          "f1_score": 0.934847797215161
-        },
-        "Decision Tree": {
-          "status": "Success",
-          "accuracy": 0.9066666666666666,
-          "precision": 0.9081359561086579,
-          "recall": 0.9066666666666666,
-          "f1_score": 0.9065825909985654
-        },
-        "KNN": {
-          "status": "Success",
-          "accuracy": 0.8883333333333333,
-          "precision": 0.888544874431635,
-          "recall": 0.8883333333333333,
-          "f1_score": 0.8883181321902147
-        },
-        "AdaBoost": {
-          "status": "Success",
-          "accuracy": 0.8883333333333333,
-          "precision": 0.8998901589263035,
-          "recall": 0.8883333333333333,
-          "f1_score": 0.8875206701753503
-        },
-        "Gradient Boosting": {
-          "status": "Success",
-          "accuracy": 0.9133333333333333,
-          "precision": 0.9224200581395349,
-          "recall": 0.9133333333333333,
-          "f1_score": 0.912864739264489
+          "accuracy": 0.93,
+          "precision": 0.9343434343434341,
+          "recall": 0.93,
+          "f1_score": 0.9298245614035087,
+          "inference_speed_seconds": 0.11069679260253906,
+          "average_confidence": 0.8803333333333334,
+          "confusion_matrix": [
+            [
+              264,
+              36
+            ],
+            [
+              6,
+              294
+            ]
+          ]
         }
       },
-      "best_model_by_f1_score": "Multinomial NB",
-      "academic_note": "No 100% accuracy is guaranteed. The best model depends on dataset quality, dataset size, preprocessing, and evaluation split."
+      "best_model_by_f1_score": "Linear SVM"
     }
   }
 }

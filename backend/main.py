@@ -17,7 +17,7 @@ class PredictRequest(BaseModel):
     text: Optional[str] = None
     url: Optional[str] = None
     language: str = "english"
-    model: str = "logistic"
+    model: str = "current"
     selected_model: Optional[str] = None
 
 
