@@ -132,8 +132,11 @@ def show_result(result):
         f"""
         <div class="result-box {box_class}">
             <div class="result-title">{label}</div>
-            <div><b>Confidence:</b> {confidence:.1f}%</div>
-            <div><b>Model:</b> {result.get("model", "Saved Model")}</div>
+            <div class="result-info">
+                <span><b>Confidence Score:</b> {confidence:.1f}%</span>
+                <span>•</span>
+                <span><b>Classification Model:</b> {result.get("model", "Saved Model")}</span>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -251,8 +254,16 @@ def main():
             st.markdown(":red[✗ Not connected]")
         st.caption("Educational use only. Always verify with trusted sources.")
 
-    st.markdown("## Fake News Detection")
-    st.markdown("Paste news text and check it using the saved ML model.", help="Simple academic detector")
+    st.markdown(
+        """
+        <div class="project-header">
+            <span class="project-badge">Academic Project</span>
+            <h1>Multilingual Fake News Detection System</h1>
+            <p>An intelligent screening application to evaluate the credibility of news claims in English and Hindi using TF-IDF feature extraction and machine learning.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if page == "Predict":
         language = st.selectbox("Language", ["english", "hindi"])
