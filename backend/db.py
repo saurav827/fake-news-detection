@@ -11,17 +11,24 @@ OLD_DB_PATH = ROOT / "predictions.db"
 
 
 def connect():
-    DB_PATH.parent.mkdir(exist_ok=True)
+    """Open (and if needed create) the SQLite DB, always ensuring schema exists."""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     if OLD_DB_PATH.exists() and not DB_PATH.exists():
         shutil.copy2(OLD_DB_PATH, DB_PATH)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # Always ensure table exists — safe on every call (CREATE TABLE IF NOT EXISTS)
+    _ensure_schema(conn)
     return conn
 
 
 def init_db():
-    with connect() as conn:
-        _ensure_schema(conn)
+    """Explicit initialisation call — safe to call multiple times."""
+    try:
+        with connect() as conn:
+            _ensure_schema(conn)
+    except Exception:
+        pass  # connect() already auto-creates; this is belt-and-suspenders
 
 
 def _create_table(conn, name="predictions"):
@@ -67,30 +74,42 @@ def _ensure_schema(conn):
 
 
 def save_prediction(text, result, confidence):
-    with connect() as conn:
-        conn.execute(
-            "INSERT INTO predictions (text, result, confidence) VALUES (?, ?, ?)",
-            (text, result, confidence),
-        )
+    """Insert a prediction row, auto-creating the DB/table if needed."""
+    try:
+        with connect() as conn:
+            conn.execute(
+                "INSERT INTO predictions (text, result, confidence) VALUES (?, ?, ?)",
+                (text, result, confidence),
+            )
+    except Exception:
+        pass  # Never crash the UI over a DB write
 
 
 def get_history(limit=50):
-    with connect() as conn:
-        rows = conn.execute(
-            """
-            SELECT text, result, confidence, timestamp
-            FROM predictions
-            ORDER BY timestamp DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
-    return [dict(row) for row in rows]
+    """Return recent predictions, or empty list if DB is missing/empty."""
+    try:
+        with connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT text, result, confidence, timestamp
+                FROM predictions
+                ORDER BY timestamp DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
 
 
 def get_stats():
-    with connect() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM predictions").fetchone()[0]
-        fake = conn.execute("SELECT COUNT(*) FROM predictions WHERE lower(result) LIKE 'fake%'").fetchone()[0]
-        real = conn.execute("SELECT COUNT(*) FROM predictions WHERE lower(result) LIKE 'real%'").fetchone()[0]
-    return {"total": total, "fake": fake, "real": real}
+    """Return prediction counts, or zeroes if DB is missing/empty."""
+    try:
+        with connect() as conn:
+            total = conn.execute("SELECT COUNT(*) FROM predictions").fetchone()[0]
+            fake = conn.execute("SELECT COUNT(*) FROM predictions WHERE lower(result) LIKE 'fake%'").fetchone()[0]
+            real = conn.execute("SELECT COUNT(*) FROM predictions WHERE lower(result) LIKE 'real%'").fetchone()[0]
+        return {"total": total, "fake": fake, "real": real}
+    except Exception:
+        return {"total": 0, "fake": 0, "real": 0}

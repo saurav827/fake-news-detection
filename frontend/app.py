@@ -22,7 +22,14 @@ except Exception:
 
 if IN_PROCESS_MODE:
     from backend.model import predict as local_predict, get_available_models as local_get_available_models
-    from backend.db import get_history as local_get_history, get_stats as local_get_stats, save_prediction as local_save_prediction
+    from backend.db import (
+        get_history as local_get_history,
+        get_stats as local_get_stats,
+        save_prediction as local_save_prediction,
+        init_db as _init_db,
+    )
+    # Auto-create DB + predictions table on first startup (critical for Streamlit Cloud)
+    _init_db()
 
 
 def get_error_message(response):
