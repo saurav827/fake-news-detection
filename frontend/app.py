@@ -11,6 +11,19 @@ from frontend.styles import apply_styles
 
 API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
 
+# Detect if we should fall back to in-process mode when local FastAPI is down
+IN_PROCESS_MODE = False
+try:
+    response = requests.get(f"{API_URL}/", timeout=1.5)
+    if response.status_code != 200:
+        IN_PROCESS_MODE = True
+except Exception:
+    IN_PROCESS_MODE = True
+
+if IN_PROCESS_MODE:
+    from backend.model import predict as local_predict, get_available_models as local_get_available_models
+    from backend.db import get_history as local_get_history, get_stats as local_get_stats, save_prediction as local_save_prediction
+
 
 def get_error_message(response):
     """Get a readable error message from the API."""
@@ -21,28 +34,77 @@ def get_error_message(response):
 
 
 def api_get(path):
-    """Read data from FastAPI."""
-    response = requests.get(f"{API_URL}{path}", timeout=20)
-    if response.status_code >= 400:
-        raise RuntimeError(get_error_message(response))
-    return response.json()
+    """Read data from FastAPI (or local DB if in-process)."""
+    if not IN_PROCESS_MODE:
+        response = requests.get(f"{API_URL}{path}", timeout=20)
+        if response.status_code >= 400:
+            raise RuntimeError(get_error_message(response))
+        return response.json()
+    else:
+        # Standalone routing
+        if path == "/":
+            return {"status": "ok", "service": "Fake News Detection (In-Process)"}
+        elif path == "/history":
+            return local_get_history(50)
+        elif path == "/stats":
+            return local_get_stats()
+        elif path.startswith("/models"):
+            lang = "english"
+            if "language=" in path:
+                lang = path.split("language=")[-1].split("&")[0]
+            return local_get_available_models(lang)
+        raise RuntimeError(f"Endpoint not supported in-process: {path}")
 
 
 def api_post(path, data):
-    """Send prediction request to FastAPI."""
-    response = requests.post(f"{API_URL}{path}", json=data, timeout=60)
-    if response.status_code >= 400:
-        raise RuntimeError(get_error_message(response))
-    return response.json()
+    """Send prediction request to FastAPI (or predict locally if in-process)."""
+    if not IN_PROCESS_MODE:
+        response = requests.post(f"{API_URL}{path}", json=data, timeout=60)
+        if response.status_code >= 400:
+            raise RuntimeError(get_error_message(response))
+        return response.json()
+    else:
+        # Standalone routing
+        if path == "/predict":
+            text = data.get("text", "")
+            url = data.get("url", "")
+            language = data.get("language", "english")
+            model_key = data.get("model", "current")
+            
+            if url:
+                from helpers.url_analyzer import extract_article_text
+                article = extract_article_text(url)
+                if not article.get("ok"):
+                    raise RuntimeError(article.get("error", "URL extraction failed"))
+                text = article["text"]
+                
+            if not text.strip():
+                raise RuntimeError("Send text or a valid article URL.")
+                
+            res = local_predict(text, language, model_key)
+            local_save_prediction(text[:5000], res["prediction"], res["confidence"])
+            return res
+            
+        elif path == "/explain":
+            from helpers.ai_explainer import generate_ai_explanation
+            return generate_ai_explanation(
+                data.get("text", ""),
+                data.get("prediction", ""),
+                data.get("confidence", 0.0),
+                data.get("keywords", [])
+            )
+        raise RuntimeError(f"Endpoint not supported in-process: {path}")
 
 
 def api_is_running():
     """Check if the backend is reachable."""
-    try:
-        api_get("/")
-        return True
-    except Exception:
-        return False
+    if not IN_PROCESS_MODE:
+        try:
+            requests.get(f"{API_URL}/", timeout=1.5)
+            return True
+        except Exception:
+            return False
+    return True
 
 
 def get_model_options(language):
@@ -181,7 +243,10 @@ def main():
         st.divider()
         st.markdown("**API Status**", help="Backend connection check")
         if api_is_running():
-            st.markdown(":green[✓ Connected]")
+            if IN_PROCESS_MODE:
+                st.markdown(":green[✓ Connected (In-Process Mode)]")
+            else:
+                st.markdown(":green[✓ Connected (Local API)]")
         else:
             st.markdown(":red[✗ Not connected]")
         st.caption("Educational use only. Always verify with trusted sources.")
