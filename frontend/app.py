@@ -1,12 +1,27 @@
-"""Simple Streamlit frontend for Fake News Detection."""
+"""Premium Streamlit frontend for Fake News Detection."""
 
 import os
-
+import json
 import pandas as pd
 import requests
 import streamlit as st
 
 from frontend.styles import apply_styles
+from config import DEMO_WARNING
+from src.preprocessing import preprocess_text
+from frontend.ui import (
+    render_header,
+    render_disclaimer,
+    render_project_workflow,
+    render_feature_cards,
+    render_sidebar,
+    render_url_article_analyzer,
+    render_detection_guide,
+    render_advanced_research_scope,
+    render_multimodal_prototype_scope,
+    render_results,
+    render_footer,
+)
 
 
 API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
@@ -30,6 +45,33 @@ if IN_PROCESS_MODE:
     )
     # Auto-create DB + predictions table on first startup (critical for Streamlit Cloud)
     _init_db()
+
+
+@st.cache_resource
+def load_local_models():
+    """Cache models in the frontend for XAI/explainability."""
+    from backend.model import load_models
+    try:
+        loaded = load_models()
+        models_dict = {}
+        for lang in ("english", "hindi"):
+            if lang in loaded:
+                models_dict[f"{lang}_model"] = loaded[lang]["model"]
+                models_dict[f"{lang}_vectorizer"] = loaded[lang]["vectorizer"]
+        
+        # Load stats/academic notes from the comparison report
+        try:
+            report_path = os.path.join("models", "model_comparison_results.json")
+            if os.path.exists(report_path):
+                with open(report_path, "r", encoding="utf-8") as f:
+                    report = json.load(f)
+                    for lang in ("english", "hindi"):
+                        models_dict[f"{lang}_stats"] = report["languages"].get(lang, {})
+        except Exception:
+            pass
+        return models_dict
+    except Exception:
+        return {}
 
 
 def get_error_message(response):
@@ -247,9 +289,12 @@ def main():
     st.set_page_config(page_title="Fake News Detector", page_icon=":newspaper:", layout="wide")
     apply_styles()
 
+    # Load cached local models/stats for frontend explainers (XAI, stats details)
+    models = load_local_models()
+
     with st.sidebar:
         st.markdown("### Menu")
-        page = st.radio("", ["Predict", "History", "Stats"], label_visibility="collapsed")
+        page = st.radio("", ["Predict", "Multimodal Prototype", "History", "Stats"], label_visibility="collapsed")
         st.divider()
         st.markdown("**API Status**", help="Backend connection check")
         if api_is_running():
@@ -260,19 +305,23 @@ def main():
         else:
             st.markdown(":red[✗ Not connected]")
         st.caption("Educational use only. Always verify with trusted sources.")
+        st.divider()
 
-    st.markdown(
-        """
-        <div class="project-header">
-            <span class="project-badge">Academic Project</span>
-            <h1>Multilingual Fake News Detection System</h1>
-            <p>An intelligent screening application to evaluate the credibility of news claims in English and Hindi using TF-IDF feature extraction and machine learning.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Append standard academic disclaimer and confidence settings from ui.py to the sidebar
+    confidence_threshold = render_sidebar()
+
+    # Render premium academic header banner
+    render_header()
 
     if page == "Predict":
+        # Academic disclaimer, workflow guidelines, and feature lists
+        render_disclaimer(DEMO_WARNING)
+        render_project_workflow()
+        render_feature_cards()
+
+        # Render URL extractor (extracts article text and populates News Text automatically)
+        render_url_article_analyzer("news_text")
+
         language = st.selectbox("Language", ["english", "hindi"])
 
         text = st.text_area(
@@ -281,7 +330,7 @@ def main():
             placeholder="Paste headline or article text",
             key="news_text",
         )
-        url = st.text_input("Article URL", placeholder="https://example.com", key="news_url")
+        url = st.text_input("Article URL (Optional override)", placeholder="https://example.com", key="news_url")
 
         predict_clicked = st.button("Check News", type="primary", use_container_width=True)
 
@@ -289,7 +338,7 @@ def main():
             if not text.strip() and not url.strip():
                 st.warning("Enter news text or URL.")
             else:
-                with st.spinner("Analyzing..."):
+                with st.spinner("Analyzing text credibility..."):
                     try:
                         result = api_post(
                             "/predict",
@@ -299,26 +348,56 @@ def main():
                                 "language": language,
                             },
                         )
-                        show_result(result)
+                        # Map predict result to keys expected by ui.py components
+                        is_real = result["prediction"] == "Real"
+                        confidence = float(result["confidence"])
+                        real_prob = confidence if is_real else 100.0 - confidence
+                        fake_prob = confidence if not is_real else 100.0 - confidence
+                        
+                        mapped_result = {
+                            "is_real": is_real,
+                            "prediction": result["prediction"],
+                            "confidence": confidence,
+                            "real_probability": real_prob,
+                            "fake_probability": fake_prob,
+                            "suspicious_words": result.get("keywords", []),
+                            "processed_text": preprocess_text(text or url, language),
+                        }
+                        
                         st.session_state["last_prediction"] = result
+                        st.session_state["last_prediction_mapped"] = mapped_result
                         st.session_state["last_text"] = text or url
                     except Exception as exc:
                         st.error(f"Error: {exc}")
 
-        if st.session_state.get("last_prediction") and not predict_clicked:
-            show_result(st.session_state["last_prediction"])
+        # If a prediction exists, render the results breakdown
+        if st.session_state.get("last_prediction_mapped"):
+            mapped_res = st.session_state["last_prediction_mapped"]
+            last_txt = st.session_state.get("last_text", "")
+            
+            # Render predictions, metric metrics, progress bars, trust signals, and explainable AI bar chart
+            render_results(mapped_res, models, language, confidence_threshold, last_txt)
+            
+            # Show LLM-based explanation button
+            show_ai_explanation(last_txt, st.session_state["last_prediction"])
 
         st.divider()
-        show_stats()
+        render_detection_guide()
+
+    elif page == "Multimodal Prototype":
+        render_multimodal_prototype_scope(
+            st.session_state.get("last_text", ""),
+            st.session_state.get("last_prediction_mapped")
+        )
 
     elif page == "History":
         show_history()
 
     else:
-        show_stats()
+        # Load advanced comparison dashboard (loads comparison JSON and displays all model comparisons)
+        render_advanced_research_scope()
 
-    footer()
-
+    render_footer()
 
 
 if __name__ == "__main__":

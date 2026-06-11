@@ -13,8 +13,18 @@ This module contains optimized text preprocessing functions including:
 import re
 import string
 import nltk
+
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    try:
+        nltk.download('stopwords', quiet=True)
+    except Exception:
+        pass
+
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
+
 
 FALLBACK_ENGLISH_STOPWORDS = {
     'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',

@@ -1,0 +1,23 @@
+# Render Deployment Blueprint Configuration
+# This file allows one-click deployments of the Fake News Detection system on Render.
+
+services:
+  # Option 1: Standalone Streamlit Deployment (Frontend with in-process ML models & SQLite)
+  - type: web
+    name: fake-news-detector-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+
+  # Option 2: Decoupled API Service (FastAPI backend server)
+  - type: web
+    name: fake-news-detector-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
